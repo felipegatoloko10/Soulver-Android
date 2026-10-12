@@ -1,0 +1,12 @@
+{
+  "name": "soulver-android",
+  "version": "1.0.0",
+  "description": "Soulver Notepad Calculator for Android and Web",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "keywords": ["soulver", "calculator", "notepad", "android"],
+  "author": "Felipe Leonardo",
+  "license": "MIT"
+}

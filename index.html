@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Soulver Notepad Calculator</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e1e1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    :root {
+      --bg-color: #1c1c1e;
+      --gutter-bg: #2c2c2e;
+      --text-color: #f2f2f7;
+      --subtext: #8e8e93;
+      --accent: #ff9f0a;
+      --border-color: #38383a;
+      --toolbar-bg: #252528;
+      --result-color: #30d158;
+      --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      --font-mono: "SF Mono", "Consolas", "Courier New", monospace;
+    }
+
+    [data-theme="light"] {
+      --bg-color: #ffffff;
+      --gutter-bg: #f2f2f7;
+      --text-color: #1c1c1e;
+      --subtext: #8e8e93;
+      --accent: #ff9500;
+      --border-color: #e5e5ea;
+      --toolbar-bg: #f9f9fb;
+      --result-color: #34c759;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-stack);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background-color: var(--toolbar-bg);
+      border-bottom: 1px solid var(--border-color);
+      user-select: none;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.3px;
+    }
+
+    .brand svg {
+      fill: var(--accent);
+      width: 24px;
+      height: 24px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      color: var(--text-color);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 6px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon:hover {
+      background-color: var(--border-color);
+    }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .editor-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border-right: 1px solid var(--border-color);
+      background-color: var(--bg-color);
+    }
+
+    textarea#editor {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 16px;
+      background: transparent;
+      color: var(--text-color);
+      font-family: var(--font-stack);
+      font-size: 16px;
+      line-height: 26px;
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-y: scroll;
+    }
+
+    .gutter-column {
+      width: 140px;
+      min-width: 110px;
+      background-color: var(--gutter-bg);
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    .gutter-scroll {
+      flex: 1;
+      overflow-y: hidden;
+      padding: 16px 12px 16px 8px;
+    }
+
+    .result-row {
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--result-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+
+    .result-row:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+
+    .result-row.empty {
+      color: transparent;
+    }
+
+    .keyboard-toolbar {
+      display: flex;
+      background-color: var(--toolbar-bg);
+      border-top: 1px solid var(--border-color);
+      padding: 6px 8px;
+      overflow-x: auto;
+      gap: 6px;
+      scrollbar-width: none;
+    }
+    .keyboard-toolbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .key-btn {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .key-btn:active {
+      background-color: var(--accent);
+      color: #fff;
+    }
+
+    .total-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background-color: var(--toolbar-bg);
+      border-top: 1px solid var(--border-color);
+      font-size: 0.95rem;
+    }
+
+    .total-label {
+      font-weight: 600;
+      color: var(--subtext);
+    }
+
+    .total-val {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--accent);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.85);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      </svg>
+      <span>Soulver</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" id="btn-theme" title="Alternar Tema">🌓</button>
+      <button class="btn-icon" id="btn-lang" title="Trocar Idioma">🌐 <span id="current-lang">PT</span></button>
+      <button class="btn-icon" id="btn-clear" title="Limpar Tudo">🗑️</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <div class="editor-column">
+      <textarea id="editor" spellcheck="false" placeholder="Digite seus cálculos ou anotações aqui..."></textarea>
+    </div>
+
+    <div class="gutter-column">
+      <div class="gutter-scroll" id="gutter"></div>
+    </div>
+  </div>
+
+  <div class="keyboard-toolbar">
+    <button class="key-btn" data-insert="linha ">linha</button>
+    <button class="key-btn" data-insert="anterior">anterior</button>
+    <button class="key-btn" data-insert="total">total</button>
+    <button class="key-btn" data-insert=" + ">+</button>
+    <button class="key-btn" data-insert=" - ">-</button>
+    <button class="key-btn" data-insert=" * ">×</button>
+    <button class="key-btn" data-insert=" / ">÷</button>
+    <button class="key-btn" data-insert="%">%</button>
+    <button class="key-btn" data-insert=" = ">=</button>
+    <button class="key-btn" data-insert=" USD em BRL">USD→BRL</button>
+    <button class="key-btn" data-insert=" EUR em BRL">EUR→BRL</button>
+    <button class="key-btn" data-insert=" km em metros">km→m</button>
+  </div>
+
+  <div class="total-bar">
+    <span class="total-label" id="label-running-total">Total Geral</span>
+    <span class="total-val" id="running-total">0</span>
+  </div>
+
+  <div class="toast" id="toast">Copiado para a área de transferência!</div>
+
+  <script src="engine/SoulverEngine.js"></script>
+  <script>
+    const engine = new SoulverEngine();
+    const editor = document.getElementById('editor');
+    const gutter = document.getElementById('gutter');
+    const runningTotalEl = document.getElementById('running-total');
+    const toast = document.getElementById('toast');
+    const btnTheme = document.getElementById('btn-theme');
+    const btnClear = document.getElementById('btn-clear');
+    const btnLang = document.getElementById('btn-lang');
+    const currentLangEl = document.getElementById('current-lang');
+
+    let currentLang = localStorage.getItem('soulver_lang') || 'PT';
+
+    const defaultExamplePT = `// Bem-vindo ao Soulver para Android & Web
+Salário = 5000
+Bônus = 1200
+Renda Total = linha 1 + linha 2
+
+Aluguel = 1800
+Mercado = 900
+Lazer = 400
+Despesas = linha 5 + linha 6 + linha 7
+
+Sobra Líquida = linha 3 - linha 8
+Dólares = 100 USD em BRL
+Viagem = 15 km em metros
+Desconto = 500 - 15%`;
+
+    const defaultExampleEN = `// Welcome to Soulver for Android & Web
+Salary = 5000
+Bonus = 1200
+Total Income = line 1 + line 2
+
+Rent = 1800
+Groceries = 900
+Fun = 400
+Expenses = line 5 + line 6 + line 7
+
+Net Remaining = line 3 - line 8
+Dollars = 100 USD in BRL
+Trip = 15 km in meters
+Discount = 500 - 15%`;
+
+    const savedText = localStorage.getItem('soulver_sheet');
+    editor.value = savedText !== null ? savedText : (currentLang === 'PT' ? defaultExamplePT : defaultExampleEN);
+
+    function update() {
+      const text = editor.value;
+      localStorage.setItem('soulver_sheet', text);
+      const res = engine.evaluateSheet(text);
+
+      gutter.innerHTML = '';
+      res.lines.forEach((l) => {
+        const div = document.createElement('div');
+        div.className = 'result-row' + (!l.formatted ? ' empty' : '');
+        div.textContent = l.formatted || '.';
+        div.title = `Clique para copiar: ${l.formatted}`;
+        div.addEventListener('click', () => {
+          if (l.formatted) {
+            navigator.clipboard.writeText(l.formatted);
+            showToast(`Copiado: ${l.formatted}`);
+          }
+        });
+        gutter.appendChild(div);
+      });
+
+      runningTotalEl.textContent = res.formattedTotal || '0';
+      syncScroll();
+    }
+
+    function syncScroll() {
+      gutter.parentElement.scrollTop = editor.scrollTop;
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.style.opacity = '1';
+      setTimeout(() => { toast.style.opacity = '0'; }, 1800);
+    }
+
+    editor.addEventListener('input', update);
+    editor.addEventListener('scroll', syncScroll);
+
+    document.querySelectorAll('.key-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const insertText = btn.getAttribute('data-insert');
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const text = editor.value;
+        editor.value = text.substring(0, start) + insertText + text.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + insertText.length;
+        editor.focus();
+        update();
+      });
+    });
+
+    let isDark = localStorage.getItem('soulver_theme') !== 'light';
+    function applyTheme() {
+      document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      localStorage.setItem('soulver_theme', isDark ? 'dark' : 'light');
+    }
+    btnTheme.addEventListener('click', () => {
+      isDark = !isDark;
+      applyTheme();
+    });
+    applyTheme();
+
+    btnLang.addEventListener('click', () => {
+      currentLang = currentLang === 'PT' ? 'EN' : 'PT';
+      currentLangEl.textContent = currentLang;
+      localStorage.setItem('soulver_lang', currentLang);
+      document.getElementById('label-running-total').textContent = currentLang === 'PT' ? 'Total Geral' : 'Running Total';
+      editor.placeholder = currentLang === 'PT' ? 'Digite seus cálculos ou anotações aqui...' : 'Type your calculations or notes here...';
+      showToast(currentLang === 'PT' ? 'Idioma: Português' : 'Language: English');
+      update();
+    });
+
+    btnClear.addEventListener('click', () => {
+      if (confirm('Deseja limpar toda a folha de cálculo?')) {
+        editor.value = '';
+        update();
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    update();
+  </script>
+</body>
+</html>
