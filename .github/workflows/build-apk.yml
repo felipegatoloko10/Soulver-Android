@@ -1,9 +1,12 @@
-name: Build Android APK
+name: Build Android APK & Release
 
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -21,15 +24,13 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
 
-    - name: Grant execute permission for gradlew
+    - name: Generate Gradle Wrapper
       run: |
         cd android
-        if [ ! -f gradlew ]; then
-          gradle wrapper
-        fi
+        gradle wrapper --gradle-version 8.5
         chmod +x gradlew
 
-    - name: Build with Gradle
+    - name: Build APK with Gradle
       run: |
         cd android
         ./gradlew assembleDebug --stacktrace
@@ -37,5 +38,15 @@ jobs:
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: soulver-debug.apk
+        name: Soulver-debug.apk
         path: android/app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Commit APK to Repository
+      run: |
+        mkdir -p release
+        cp android/app/build/outputs/apk/debug/app-debug.apk release/Soulver.apk
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add release/Soulver.apk
+        git commit -m "chore(release): upload compiled Soulver.apk binary [skip ci]" || echo "No changes to commit"
+        git push origin main
